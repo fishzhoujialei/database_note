@@ -1,0 +1,62 @@
+##语法：
+ WITH RECURSIVE cte_name AS (
+    initial_query    ## anchor member
+    UNION ALL
+    recursive_query  ##recursive member that references to the CTE name
+)
+SELECT * FROM cte_name;
+
+###例子：输出“Monday”到“Sunday”
+WITH cte_numbers(n, weekday) 
+AS (
+    SELECT 
+        0, 
+        DATENAME(DW, 0)
+    UNION ALL
+    SELECT    
+        n + 1, 
+        DATENAME(DW, n + 1)
+    FROM    
+        cte_numbers
+    WHERE n < 6
+)
+SELECT 
+    weekday
+FROM 
+    cte_numbers;
+#####################################################
+解释：
+###L12-L14:为anchor member,即递归最初始值，返回“Monday”。
+SELECT 
+    0, 
+    DATENAME(DW, 0)
+
+#####L16-L21:递归部分，输出“tuesday”到“Sunday”。
+SELECT    
+        n + 1, 
+        DATENAME(DW, n + 1)
+    FROM    
+        cte_numbers
+    WHERE n < 6
+
+##例2：本例使用递归CTE获取没有经理（或manager_id列中的值为NULL）的最高经理的所有下属：
+WITH cte_org AS (
+    SELECT       
+        staff_id, 
+        first_name,
+        manager_id
+        
+    FROM       
+        sales.staffs                ##########L44-50：输出最高经理的信息。
+    WHERE manager_id IS NULL
+    UNION ALL
+    SELECT 
+        e.staff_id, 
+        e.first_name,
+        e.manager_id
+    FROM 
+        sales.staffs e
+        INNER JOIN cte_org o 
+            ON o.staff_id = e.manager_id    ##########L53-60：递归输出最高经理的下属。
+)
+SELECT * FROM cte_org;
